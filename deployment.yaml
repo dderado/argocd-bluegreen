@@ -12,13 +12,22 @@ spec:
     metadata:
       labels:
         app: rollout-bluegreen
+        version: blue
     spec:
       containers:
       - name: rollouts-demo
         image: argoproj/rollouts-demo:blue
         imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - name: web
+          containerPort: 8080
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "140m"
   strategy:
     blueGreen: 
       # activeService specifies the service to update with the new template hash at time of promotion.
@@ -33,4 +42,29 @@ spec:
       # stack as soon as the ReplicaSet are completely ready/available.
       # Rollouts can be resumed using: `kubectl argo rollouts promote ROLLOUT`
       autoPromotionEnabled: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: demo
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-bluegreen
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: rollout-bluegreen
+  type: ClusterIP
+---
 
